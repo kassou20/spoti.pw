@@ -132,21 +132,6 @@ static void layoutHeader(UIViewController *page) {
     CGRect frame = CGRectMake(SGRSideMargin, round(CGRectGetMidY(stack.frame) - height / 2), MAX(0, trailing - SGRSideMargin), height);
     if (!CGRectEqualToRect(title.frame, frame)) title.frame = frame;
 
-    // Hide any third-party branding views (e.g., EeveeSpotify logo) added to the header or its
-    // ancestors. Only the title label and the stack with its avatar belong here.
-    for (UIView *sub in header.subviews) {
-        if (sub == stack || sub == title) continue;
-        vanish(sub);
-    }
-    // Walk up one level: the wrapper around the header may carry foreign views too.
-    UIView *wrapper = header.superview.superview;
-    if (wrapper) {
-        for (UIView *sub in wrapper.subviews) {
-            if ([sub isDescendantOfView:header] || sub == header.superview || sub == sg_scrim) continue;
-            if ([sub isKindOfClass:UIImageView.class]) vanish(sub);
-        }
-    }
-
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         SGLog(@"redesign home: header %@, avatar %@ in the stack %@, title %@, scrim %@", NSStringFromCGRect(header.frame),

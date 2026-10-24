@@ -49,6 +49,39 @@ jobs:
           curl -fsSL -L "$IPA_URL" -o ipa/spotify.ipa
           case "$(file --mime-type -b ipa/spotify.ipa)" in application/zip|application/x-ios-app) ;; *) echo "::error::Not an IPA"; exit 1 ;; esac
 
+      - name: Strip IPAOMTK watermark dylib
+        run: |
+          set -euo pipefail
+          WORK="$(mktemp -d)"
+          unzip -q ipa/spotify.ipa -d "$WORK"
+          APP_DIR="$(ls -d "$WORK"/Payload/*.app)"
+          FW="$APP_DIR/Frameworks"
+
+          # Build a tiny stub dylib to replace the watermark one.
+          # The stub loads and does nothing, so any existing LC_LOAD_DYLIB still resolves.
+          echo 'void __attribute__((constructor)) _stub(void) {}' > "$WORK/stub.c"
+          xcrun --sdk iphoneos clang -target arm64-apple-ios16.0 -dynamiclib \
+            -install_name @rpath/IPAOMTK.dylib -o "$WORK/IPAOMTK.dylib" "$WORK/stub.c"
+
+          if [ -f "$FW/IPAOMTK.dylib" ]; then
+            echo "Replacing IPAOMTK.dylib ($(stat -f%z "$FW/IPAOMTK.dylib") bytes) with stub ($(stat -f%z "$WORK/IPAOMTK.dylib") bytes)"
+            cp "$WORK/IPAOMTK.dylib" "$FW/IPAOMTK.dylib"
+          fi
+          # Also stub Fixipa.dylib — another ipaomtk injected lib that may carry branding
+          if [ -f "$FW/Fixipa.dylib" ]; then
+            echo 'void __attribute__((constructor)) _stub2(void) {}' > "$WORK/stub2.c"
+            xcrun --sdk iphoneos clang -target arm64-apple-ios16.0 -dynamiclib \
+              -install_name @rpath/Fixipa.dylib -o "$WORK/Fixipa.dylib" "$WORK/stub2.c"
+            echo "Replacing Fixipa.dylib ($(stat -f%z "$FW/Fixipa.dylib") bytes) with stub"
+            cp "$WORK/Fixipa.dylib" "$FW/Fixipa.dylib"
+          fi
+
+          # Re-pack the IPA
+          (cd "$WORK" && zip -qr ipa.zip Payload/)
+          mv "$WORK/ipa.zip" ipa/spotify.ipa
+          rm -rf "$WORK"
+          echo "IPA repackaged with watermark dylibs stubbed out"
+
       - run: make release
 
       - uses: actions/upload-artifact@v5
