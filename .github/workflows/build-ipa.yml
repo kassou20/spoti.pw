@@ -6,7 +6,7 @@ on:
       ipa_url:
         description: "Direct link to a decrypted Spotify IPA"
         required: false
-        default: "https://github.com/ruper06/vitrine/releases/download/spotify-ipa/6e51242072af1854eef54f3ea45fcde251737b15.ipa"
+        default: "https://github.com/kassou20/spoti.pw/releases/download/spotify-ipa/Spotify-9.1.78.ipa"
         type: string
       upload_method:
         description: "Where to put the result"
@@ -45,14 +45,9 @@ jobs:
       - name: Download IPA
         run: |
           mkdir -p ipa
-          IPA_URL="${{ inputs.ipa_url || 'https://github.com/ruper06/vitrine/releases/download/spotify-ipa/6e51242072af1854eef54f3ea45fcde251737b15.ipa' }}"
+          IPA_URL="${{ inputs.ipa_url || 'https://github.com/kassou20/spoti.pw/releases/download/spotify-ipa/Spotify-9.1.78.ipa' }}"
           curl -fsSL -L "$IPA_URL" -o ipa/spotify.ipa
           case "$(file --mime-type -b ipa/spotify.ipa)" in application/zip|application/x-ios-app) ;; *) echo "::error::Not an IPA"; exit 1 ;; esac
-
-      - name: Inject EeveeSpotify Premium
-        run: |
-          curl -fsSL -L "https://github.com/SideloadLabs/EeveeSpotifyReincarnated/releases/download/v6.6.8/com.eevee.spotify_6.6.8_iphoneos-arm64.deb" -o /tmp/eevee.deb
-          cyan -i ipa/spotify.ipa -o ipa/spotify.ipa -f /tmp/eevee.deb -s --overwrite
 
       - run: make release
 
