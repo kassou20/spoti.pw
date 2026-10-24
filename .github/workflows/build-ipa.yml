@@ -51,7 +51,7 @@ jobs:
 
       - name: Inject EeveeSpotify Premium
         run: |
-          curl -fsSL -L "https://github.com/SideloadLabs/EeveeSpotifyReincarnated/releases/download/v7.0.0/com.eevee.spotify_7.0.0_iphoneos-arm64.deb" -o /tmp/eevee.deb
+          curl -fsSL -L "https://github.com/SideloadLabs/EeveeSpotifyReincarnated/releases/download/v6.6.8/com.eevee.spotify_6.6.8_iphoneos-arm64.deb" -o /tmp/eevee.deb
           cyan -i ipa/spotify.ipa -o ipa/spotify.ipa -f /tmp/eevee.deb -s --overwrite
 
       - run: make release
